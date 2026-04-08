@@ -32,11 +32,6 @@ type Log = {
   metadata?: Record<string, any>;
 };
 
-interface AdminAuditLogsPageProps {
-  initialLogs?: Log[];
-  isDemoUser: boolean;
-}
-
 // Helper to format numbers
 const formatNumber = (num: number): string => {
   if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
@@ -157,20 +152,15 @@ const auditLogAPI = {
   }
 };
 
-export default function AdminAuditLogsPage({ initialLogs, isDemoUser: initialIsDemoUser }: AdminAuditLogsPageProps) {
+export default function AdminAuditLogsPage() {
   const { data: session } = useSession();
   
-  // Determine if user is demo based on session or prop
+  // Determine if user is demo based on session
   const isDemoUser = useMemo(() => {
-    // If explicitly passed as demo user
-    if (initialIsDemoUser) return true;
-    // Check if no session
     if (!session?.user?.email) return true;
-    // Check if demo email
     if (session.user.email === 'demo@example.com' || session.user.email?.includes('demo')) return true;
-    // Otherwise real user
     return false;
-  }, [session, initialIsDemoUser]);
+  }, [session]);
   
   const [logs, setLogs] = useState<Log[]>([]);
   const [search, setSearch] = useState('');
@@ -188,9 +178,9 @@ export default function AdminAuditLogsPage({ initialLogs, isDemoUser: initialIsD
   // Fetch real logs from API for non-demo users
   const fetchRealLogs = useCallback(async (isRefreshing = false) => {
     if (isDemoUser) {
-      // Demo user - use mock data
-      setLogs(generateMockLogs());
-      setTotalCount(generateMockLogs().length);
+      const mockData = generateMockLogs();
+      setLogs(mockData);
+      setTotalCount(mockData.length);
       setLoading(false);
       setApiError(null);
       return;
@@ -213,7 +203,6 @@ export default function AdminAuditLogsPage({ initialLogs, isDemoUser: initialIsD
         severity: severityFilter,
       });
       
-      // Handle different response formats
       if (result.logs && Array.isArray(result.logs)) {
         setLogs(result.logs);
         setTotalCount(result.total || result.logs.length);
@@ -224,7 +213,6 @@ export default function AdminAuditLogsPage({ initialLogs, isDemoUser: initialIsD
         setLogs(result);
         setTotalCount(result.length);
       } else {
-        // If API returns unexpected format, show empty state
         console.warn('Unexpected API response format:', result);
         setLogs([]);
         setTotalCount(0);
@@ -238,7 +226,6 @@ export default function AdminAuditLogsPage({ initialLogs, isDemoUser: initialIsD
       setLogs([]);
       setTotalCount(0);
       
-      // Show toast notification for real users
       if (!isRefreshing) {
         toast.error('Failed to load audit logs. Please try again.');
       }
@@ -256,7 +243,7 @@ export default function AdminAuditLogsPage({ initialLogs, isDemoUser: initialIsD
   // Refetch when filters change
   useEffect(() => {
     if (!isDemoUser) {
-      setPage(1); // Reset to first page when filters change
+      setPage(1);
       fetchRealLogs();
     }
   }, [search, statusFilter, severityFilter, isDemoUser]);
@@ -290,7 +277,7 @@ export default function AdminAuditLogsPage({ initialLogs, isDemoUser: initialIsD
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
 
-  // Filtered logs for demo mode (for real users, logs are already filtered by API)
+  // Filtered logs for demo mode
   const filteredLogs = useMemo(() => {
     if (isDemoUser) {
       let result = logs;
@@ -319,7 +306,7 @@ export default function AdminAuditLogsPage({ initialLogs, isDemoUser: initialIsD
     return logs;
   }, [logs, search, statusFilter, severityFilter, isDemoUser]);
 
-  // Pagination for demo mode only (real users use API pagination)
+  // Pagination for demo mode only
   const paginatedLogs = useMemo(() => {
     if (isDemoUser) {
       const start = (page - 1) * pageSize;
