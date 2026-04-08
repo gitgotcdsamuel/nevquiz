@@ -8,7 +8,7 @@ import { getClientIp } from '@/lib/rate-limit';
 // POST - Start exam attempt
 export async function POST(
   request: NextRequest,
-  { params }: { params: { examId: string } }
+  { params }: { params: Promise<> }
 ) {
   try {
     const session = await getServerSession(authOptions);

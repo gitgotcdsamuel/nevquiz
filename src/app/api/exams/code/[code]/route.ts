@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 // GET single exam by ID (for lecturers/admins to view details)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { examId: string } }
+  { params }: { params: Promise<> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -59,7 +59,7 @@ export async function GET(
 // PUT update exam (lecturer only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { examId: string } }
+  { params }: { params: Promise<> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -120,7 +120,7 @@ export async function PUT(
 // DELETE exam (lecturer only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { examId: string } }
+  { params }: { params: Promise<> }
 ) {
   try {
     const session = await getServerSession(authOptions);

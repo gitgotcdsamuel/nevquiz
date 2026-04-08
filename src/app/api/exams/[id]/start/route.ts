@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<> }
 ) {
   try {
     const examId = params.id;
@@ -214,7 +214,7 @@ export async function POST(
 // Also add GET method for testing
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<> }
 ) {
   try {
     const exam = await prisma.exam.findUnique({
