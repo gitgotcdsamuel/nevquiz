@@ -80,7 +80,7 @@ function LoginContent() {
       setError('Invalid demo credentials. Please try again.');
       setIsLoading(false);
     } else {
-      router.push(demoCredentials[type].redirect);
+      window.location.href = demoCredentials[type].redirect;
     }
   };
 
@@ -99,7 +99,7 @@ function LoginContent() {
       setError('Invalid email or password');
       setIsLoading(false);
     } else {
-      router.push('/dashboard');
+      window.location.href = '/dashboard';
     }
   };
 
