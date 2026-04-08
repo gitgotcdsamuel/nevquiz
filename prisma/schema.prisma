@@ -1,0 +1,409 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique @db.VarChar(255)
+  password     String    @db.VarChar(500)
+  name         String    @db.NVarChar(255)
+  role         String    @default("STUDENT") @db.VarChar(20)
+  status       String    @default("ACTIVE") @db.VarChar(20)
+  avatarUrl    String?   @db.VarChar(500)
+  phone        String?   @db.VarChar(20)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastLoginAt  DateTime?
+  lastActiveAt DateTime?
+
+  // Relations
+  adminProfile    AdminProfile?
+  lecturerProfile LecturerProfile?
+  studentProfile  StudentProfile?
+  sessions        Session[]
+  createdExams    Exam[]           @relation("ExamCreator")
+  announcements   Announcement[]   @relation("AnnouncementAuthor")
+  auditLogs       AuditLog[] // ← FIXED: Added opposite side for AuditLog
+
+  @@index([email], map: "IDX_User_Email")
+  @@index([role], map: "IDX_User_Role")
+  @@index([status], map: "IDX_User_Status")
+  @@map("Users")
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  name        String   @db.NVarChar(200)
+  code        String   @unique @db.VarChar(50)
+  description String?  @db.NVarChar(Max)
+  credits     Int?
+  department  String?  @db.NVarChar(100)
+  semester    Int?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  announcements Announcement[]
+  exams         Exam[]
+
+  @@index([code], map: "IDX_Course_Code")
+  @@map("courses")
+}
+
+model Announcement {
+  id             String    @id @default(cuid())
+  title          String
+  content        String
+  type           String // info, warning, success, event
+  targetAudience String // ALL, STUDENTS, LECTURERS, SPECIFIC_COURSE
+  courseId       String?   @map("course_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  expiresAt      DateTime? @map("expires_at")
+  createdBy      String    @map("created_by")
+  isActive       Boolean   @default(true) @map("is_active")
+
+  course Course? @relation(fields: [courseId], references: [id])
+  author User    @relation("AnnouncementAuthor", fields: [createdBy], references: [id])
+
+  @@map("announcements")
+}
+
+model StudentProfile {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  studentId        String   @unique @db.VarChar(50)
+  rollNumber       String?  @db.VarChar(50)
+  department       String   @db.NVarChar(100)
+  program          String   @db.NVarChar(100)
+  batch            Int
+  semester         Int
+  admissionYear    Int
+  totalExamsTaken  Int      @default(0)
+  completedExams   Int      @default(0)
+  averageScore     Float    @default(0)
+  totalViolations  Int      @default(0)
+  rank             Int?
+  emergencyContact String?  @db.VarChar(20)
+  address          String?  @db.NVarChar(Max)
+  metaData         String?  @db.NVarChar(Max)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([studentId], map: "IDX_StudentProfile_StudentId")
+  @@map("StudentProfiles")
+}
+
+model LecturerProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  employeeId        String   @unique @db.VarChar(50)
+  department        String   @db.NVarChar(100)
+  faculty           String   @db.NVarChar(100)
+  designation       String   @db.NVarChar(100)
+  qualification     String?  @db.NVarChar(200)
+  specialization    String?  @db.NVarChar(200)
+  totalExamsCreated Int      @default(0)
+  activeExams       Int      @default(0)
+  totalStudents     Int      @default(0)
+  averageRating     Float    @default(0)
+  officeHours       String?  @db.NVarChar(Max)
+  officeLocation    String?  @db.NVarChar(200)
+  officePhone       String?  @db.VarChar(20)
+  website           String?  @db.VarChar(500)
+  metaData          String?  @db.NVarChar(Max)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId], map: "IDX_LecturerProfile_EmployeeId")
+  @@map("LecturerProfiles")
+}
+
+model AdminProfile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  permissions         String   @default("[]") @db.NVarChar(Max)
+  accessLevel         Int      @default(1)
+  adminType           String   @default("SUPER_ADMIN") @db.NVarChar(50)
+  assignedDepartments String?  @db.NVarChar(Max)
+  metaData            String?  @db.NVarChar(Max)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("AdminProfiles")
+}
+
+model Session {
+  id             String   @id @default(uuid())
+  userId         String
+  sessionToken   String   @unique @db.VarChar(500)
+  expires        DateTime
+  ipAddress      String?  @db.VarChar(45)
+  userAgent      String?  @db.NVarChar(500)
+  deviceInfo     String?  @db.NVarChar(Max)
+  isActive       Boolean  @default(true)
+  lastActivityAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "IDX_Session_UserId")
+  @@map("Sessions")
+}
+
+model Exam {
+  id              String    @id @default(uuid())
+  title           String    @db.NVarChar(500)
+  description     String?   @db.NVarChar(Max)
+  code            String    @unique @db.VarChar(20)
+  shortCode       String    @unique @db.VarChar(10)
+  lecturerId      String
+  courseCode      String    @db.VarChar(50)
+  courseName      String    @db.NVarChar(200)
+  duration        Int
+  totalMarks      Int
+  passingMarks    Int
+  startTime       DateTime
+  endTime         DateTime
+  resultPublishAt DateTime?
+  status          String    @default("DRAFT") @db.VarChar(20)
+  isPublished     Boolean   @default(false)
+  isArchived      Boolean   @default(false)
+  settings        String?   @db.NVarChar(Max)
+  instructions    String?   @db.NVarChar(Max)
+  allowedDevices  String?   @db.NVarChar(Max)
+  maxAttempts     Int       @default(1)
+  securityLevel   Int       @default(1)
+  proctoringMode  String    @default("NONE") @db.NVarChar(50)
+  totalAttempts   Int       @default(0)
+  avgScore        Float?    @default(0)
+  passRate        Float?    @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  publishedAt     DateTime?
+
+  lecturer   User            @relation("ExamCreator", fields: [lecturerId], references: [id])
+  course     Course          @relation(fields: [courseCode], references: [code])
+  attempts   ExamAttempt[]
+  examLogs   ExamLog[]
+  violations ExamViolation[]
+  questions  Question[]
+
+  @@index([lecturerId], map: "IDX_Exam_LecturerId")
+  @@index([code], map: "IDX_Exam_Code")
+  @@index([status], map: "IDX_Exam_Status")
+  @@map("Exams")
+}
+
+model Question {
+  id            String   @id @default(uuid())
+  examId        String
+  questionText  String   @db.NVarChar(Max)
+  questionType  String   @default("MULTIPLE_CHOICE") @db.VarChar(30)
+  marks         Int      @default(1)
+  order         Int      @default(0)
+  difficulty    Int      @default(1)
+  options       String?  @db.NVarChar(Max)
+  correctAnswer String?  @db.NVarChar(Max)
+  explanation   String?  @db.NVarChar(Max)
+  imageUrl      String?  @db.VarChar(500)
+  audioUrl      String?  @db.VarChar(500)
+  videoUrl      String?  @db.VarChar(500)
+  tags          String?  @db.NVarChar(Max)
+  category      String?  @db.NVarChar(100)
+  topic         String?  @db.NVarChar(100)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  exam    Exam     @relation(fields: [examId], references: [id])
+  answers Answer[]
+
+  @@index([examId], map: "IDX_Question_ExamId")
+  @@map("Questions")
+}
+
+model ExamAttempt {
+  id                String    @id @default(uuid())
+  examId            String
+  studentId         String
+  attemptNumber     Int       @default(1)
+  startedAt         DateTime  @default(now())
+  submittedAt       DateTime?
+  timeSpent         Int       @default(0)
+  status            String    @default("NOT_STARTED") @db.VarChar(20)
+  score             Float?
+  totalMarks        Int
+  percentage        Float?
+  grade             String?   @db.NVarChar(10)
+  rank              Int?
+  ipAddress         String?   @db.VarChar(45)
+  userAgent         String?   @db.NVarChar(500)
+  deviceInfo        String?   @db.NVarChar(Max)
+  browserInfo       String?   @db.NVarChar(Max)
+  violationCount    Int       @default(0)
+  isFlagged         Boolean   @default(false)
+  isTerminated      Boolean   @default(false)
+  terminationReason String?   @db.NVarChar(500)
+  proctoringData    String?   @db.NVarChar(Max) // You can change to Json? later if needed
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  exam    Exam     @relation(fields: [examId], references: [id])
+  answers Answer[]
+
+  @@unique([examId, studentId, attemptNumber], name: "UQ_ExamAttempt_Unique")
+  @@index([examId], map: "IDX_ExamAttempt_ExamId")
+  @@index([studentId], map: "IDX_ExamAttempt_StudentId")
+  @@map("ExamAttempts")
+}
+
+model Answer {
+  id              String    @id @default(uuid())
+  attemptId       String
+  questionId      String
+  answerText      String?   @db.NVarChar(Max)
+  selectedOptions String?   @db.NVarChar(Max)
+  isCorrect       Boolean?
+  marksAwarded    Float     @default(0)
+  feedback        String?   @db.NVarChar(Max)
+  autoGraded      Boolean   @default(false)
+  timeSpent       Int?
+  answeredAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  attempt  ExamAttempt @relation(fields: [attemptId], references: [id], onUpdate: NoAction)
+  question Question    @relation(fields: [questionId], references: [id], onUpdate: NoAction)
+
+  @@unique([attemptId, questionId], name: "UQ_Answer_Unique")
+  @@index([attemptId], map: "IDX_Answer_AttemptId")
+  @@map("Answers")
+}
+
+model ExamViolation {
+  id            String   @id @default(uuid())
+  examId        String
+  studentId     String
+  attemptId     String?
+  violationType String   @db.VarChar(30)
+  description   String   @db.NVarChar(Max)
+  severity      String   @default("MEDIUM") @db.VarChar(20)
+  evidence      String?  @db.NVarChar(Max)
+  actionTaken   String?  @db.NVarChar(100)
+  isReviewed    Boolean  @default(false)
+  reviewedBy    String?
+  reviewNotes   String?  @db.NVarChar(Max)
+  timestamp     DateTime @default(now())
+
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@index([examId], map: "IDX_ExamViolation_ExamId")
+  @@index([studentId], map: "IDX_ExamViolation_StudentId")
+  @@map("ExamViolations")
+}
+
+model ExamLog {
+  id        String   @id @default(uuid())
+  examId    String
+  attemptId String?
+  studentId String?
+  action    String   @db.NVarChar(100)
+  details   String?  @db.NVarChar(Max)
+  ipAddress String?  @db.VarChar(45)
+  userAgent String?  @db.NVarChar(500)
+  timestamp DateTime @default(now())
+
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@index([examId], map: "IDX_ExamLog_ExamId")
+  @@map("ExamLogs")
+}
+
+model Notification {
+  id          String    @id @default(uuid())
+  userId      String
+  examId      String?
+  type        String    @db.VarChar(30)
+  title       String    @db.NVarChar(200)
+  message     String    @db.NVarChar(Max)
+  data        String?   @db.NVarChar(Max)
+  status      String    @default("UNREAD") @db.VarChar(20)
+  isImportant Boolean   @default(false)
+  isArchived  Boolean   @default(false)
+  actionUrl   String?   @db.VarChar(500)
+  actionLabel String?   @db.NVarChar(100)
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  readAt      DateTime?
+
+  @@index([userId], map: "IDX_Notification_UserId")
+  @@index([type], map: "IDX_Notification_Type")
+  @@map("Notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String   @db.VarChar(100)
+  details    String?  @db.NVarChar(Max)
+  entityType String?  @db.NVarChar(100)
+  entityId   String?  @db.VarChar(255)
+  metadata   String?  @db.NVarChar(Max)
+  userId     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "IDX_AuditLog_UserId")
+  @@index([action], map: "IDX_AuditLog_Action")
+  @@index([createdAt], map: "IDX_AuditLog_CreatedAt")
+  @@index([entityType, entityId], map: "IDX_AuditLog_Entity")
+  @@map("AuditLogs")
+}
+
+model Message {
+  id          String    @id @default(uuid())
+  senderId    String
+  recipientId String
+  subject     String?   @db.NVarChar(200)
+  content     String    @db.NVarChar(Max)
+  attachments String?   @db.NVarChar(Max)
+  isRead      Boolean   @default(false)
+  isArchived  Boolean   @default(false)
+  isImportant Boolean   @default(false)
+  parentId    String?
+  threadId    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  readAt      DateTime?
+
+  @@index([senderId], map: "IDX_Message_SenderId")
+  @@index([recipientId], map: "IDX_Message_RecipientId")
+  @@map("Messages")
+}
+
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique @db.VarChar(100)
+  value       String   @db.NVarChar(Max)
+  description String?  @db.NVarChar(500)
+  category    String   @db.NVarChar(50)
+  isPublic    Boolean  @default(false)
+  updatedBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([key], map: "IDX_SystemSetting_Key")
+  @@map("SystemSettings")
+}
