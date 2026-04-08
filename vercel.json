@@ -5,8 +5,16 @@
   "framework": "nextjs",
   "regions": ["iad1"],
   "env": {
-    "DATABASE_URL": "@database_url",
-    "NEXTAUTH_URL": "@nextauth_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret"
+    "DATABASE_URL": "postgresql://postgres:xjMXaVwzOjVJTaXhPjWFSGTDXLeWQnWJ@mainline.proxy.rlwy.net:58132/railway",
+    "NEXTAUTH_URL": "https://your-app.vercel.app",
+    "NEXTAUTH_SECRET": "c79aefcf544bee9d4895401de4d93bc42ce59e1108f4452a87dfc74c17b2df14",
+    "SMTP_HOST": "smtp.gmail.com",
+    "SMTP_PORT": "587",
+    "SMTP_USER": "10299650@upsamail.edu.gh",
+    "SMTP_PASS": "thegr8nwrxh001",
+    "SMTP_SECURE": "false",
+    "EMAIL_FROM": "noreply@examsystem.com",
+    "EMAIL_FROM_NAME": "Exam System",
+    "EMAIL_REPLY_TO": "support@examsystem.com"
   }
 }
