@@ -7,7 +7,7 @@ import { calculatePercentage } from '@/lib/utils';
 // POST - Submit exam attempt
 export async function POST(
   request: NextRequest,
-  { params }: { params: { examId: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -16,6 +16,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { code } = await params;
     const body = await request.json();
     const { attemptId, answers, timeSpent } = body;
 
@@ -55,7 +56,7 @@ export async function POST(
 
     for (const answer of answers) {
       const question = attempt.exam.questions.find(
-        (q: { id: any; }) => q.id === answer.questionId
+        (q) => q.id === answer.questionId
       );
 
       if (!question) continue;
@@ -76,9 +77,8 @@ export async function POST(
           totalScore += marksAwarded;
         }
       } else {
-        // For SHORT_ANSWER and ESSAY, mark as pending for manual grading
         marksAwarded = 0;
-        isCorrect = false;
+        isCorrect = null;
       }
 
       answerRecords.push({

@@ -46,7 +46,7 @@ export async function GET(request: Request) {
 
     // Fetch violations separately
     const attemptsWithViolations = await Promise.all(
-      exam.attempts.map(async (attempt) => {
+      exam.attempts.map(async (attempt: { id: any; }) => {
         const violations = await prisma.examViolation.findMany({
           where: { attemptId: attempt.id },
         });
@@ -146,7 +146,7 @@ export async function GET(request: Request) {
     const pdfBytes = await pdfDoc.save();
     const filename = `${exam.title.replace(/[^a-z0-9]/gi, '_')}_results.pdf`;
 
-    return new Response(pdfBytes, {
+    return new Response(Buffer.from(pdfBytes), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}"`,

@@ -64,7 +64,7 @@ export async function POST(request: Request) {
         securityLevel: originalExam.securityLevel,
         proctoringMode: originalExam.proctoringMode,
         questions: {
-          create: originalExam.questions.map(q => ({
+          create: originalExam.questions.map((q: { questionText: any; questionType: any; marks: any; order: any; difficulty: any; options: any; correctAnswer: any; explanation: any; category: any; topic: any; }) => ({
             questionText: q.questionText,
             questionType: q.questionType,
             marks: q.marks,

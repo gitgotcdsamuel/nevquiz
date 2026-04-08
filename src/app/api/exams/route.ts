@@ -152,7 +152,18 @@ export async function POST(request: NextRequest) {
     console.log('Exam data to create:', JSON.stringify(examData, null, 2));
 
     // Use transaction to ensure data consistency
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: {
+        exam: {
+          create: (arg0: {
+            data: {
+              title: any; description: any; code: any; // Your create page now sends 'code' not 'examCode'
+              shortCode: any; lecturerId: string; courseCode: any; courseName: any; // Use courseName from create page
+              duration: number; totalMarks: number; passingMarks: number; startTime: Date; endTime: Date; isPublished: any; status: string; isArchived: boolean; settings: any; // Your create page now sends 'settings' not 'securitySettings'
+              instructions: any; maxAttempts: any; securityLevel: any; proctoringMode: any; avgScore: number; passRate: number; totalAttempts: number; publishedAt: Date | null;
+            };
+          }) => any; findUnique: (arg0: { where: { id: any; }; include: { questions: { select: { id: boolean; questionText: boolean; questionType: boolean; marks: boolean; order: boolean; }; orderBy: { order: string; }; }; lecturer: { select: { name: boolean; email: boolean; }; }; }; }) => any;
+        }; question: { create: (arg0: { data: { examId: any; questionText: any; questionType: any; marks: number; order: any; difficulty: any; options: any; correctAnswer: any; explanation: any; category: any; topic: any; }; }) => any; }; lecturerProfile: { update: (arg0: { where: { userId: string; }; data: { totalExamsCreated: { increment: number; }; activeExams: { increment: number; } | undefined; }; }) => any; }; auditLog: { create: (arg0: { data: { userId: string; action: string; entityType: string; entityId: any; newData: string; }; }) => any; };
+      }) => {
       // Create the exam
       const createdExam = await tx.exam.create({
         data: examData

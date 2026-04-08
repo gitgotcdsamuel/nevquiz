@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);

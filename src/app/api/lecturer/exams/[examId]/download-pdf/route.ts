@@ -210,9 +210,9 @@ export async function GET(
       yPosition -= 25;
       
       // Calculate statistics
-      const completedAttempts = exam.attempts.filter(a => a.status === 'COMPLETED' || a.status === 'SUBMITTED');
+      const completedAttempts = exam.attempts.filter((a: { status: string; }) => a.status === 'COMPLETED' || a.status === 'SUBMITTED');
       const averageScore = completedAttempts.length > 0 
-        ? completedAttempts.reduce((sum, a) => sum + (a.score || 0), 0) / completedAttempts.length 
+        ? completedAttempts.reduce((sum: any, a: { score: any; }) => sum + (a.score || 0), 0) / completedAttempts.length 
         : 0;
       
       page.drawText(`Total Attempts: ${exam.attempts.length}`, {
@@ -242,7 +242,7 @@ export async function GET(
       
       yPosition -= 18;
       
-      const violationCount = exam.attempts.reduce((sum, a) => sum + (a.violationCount || 0), 0);
+      const violationCount = exam.attempts.reduce((sum: any, a: { violationCount: any; }) => sum + (a.violationCount || 0), 0);
       page.drawText(`Total Violations: ${violationCount}`, {
         x: 50,
         y: yPosition,
@@ -310,7 +310,7 @@ export async function GET(
     
     const pdfBytes = await pdfDoc.save();
     
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(Buffer.from(pdfBytes), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="exam-${exam.code}-report.pdf"`,

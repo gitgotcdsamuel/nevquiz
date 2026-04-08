@@ -4,10 +4,10 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<> }
+  { params }: { params: { id: string; attemptId: string } }
 ) {
   try {
-    const  = await params;
+    const { id: examId, attemptId } = params;
     
     console.log('Loading exam attempt:', { examId, attemptId });
     

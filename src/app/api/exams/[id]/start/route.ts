@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const examId = params.id;
@@ -174,7 +174,7 @@ export async function POST(
         totalMarks: exam.totalMarks,
         passingMarks: exam.passingMarks,
         totalQuestions: exam.questions.length,
-        questions: exam.questions.map(q => ({
+        questions: exam.questions.map((q: { id: any; questionText: any; questionType: any; marks: any; order: any; difficulty: any; }) => ({
           id: q.id,
           questionText: q.questionText,
           questionType: q.questionType,
@@ -191,20 +191,26 @@ export async function POST(
     console.error('Detailed error starting exam:', error);
     
     // Log specific Prisma errors
-    if (error.code) {
-      console.error('Prisma error code:', error.code);
+    if (error instanceof Error) {
+      if ((error as any).code) {
+        console.error('Prisma error code:', (error as any).code);
+      }
+      if ((error as any).meta) {
+        console.error('Prisma error meta:', (error as any).meta);
+      }
     }
-    if (error.meta) {
-      console.error('Prisma error meta:', error.meta);
-    }
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorCode = (error as any)?.code;
+    const errorMeta = (error as any)?.meta;
     
     return NextResponse.json(
       { 
         success: false,
         error: 'Failed to start exam',
-        details: error.message,
-        code: error.code,
-        meta: error.meta
+        details: errorMessage,
+        code: errorCode,
+        meta: errorMeta
       },
       { status: 500 }
     );
@@ -214,7 +220,7 @@ export async function POST(
 // Also add GET method for testing
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const exam = await prisma.exam.findUnique({
@@ -253,8 +259,9 @@ export async function GET(
     });
     
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Server error', details: error.message },
+      { error: 'Server error', details: errorMessage },
       { status: 500 }
     );
   }

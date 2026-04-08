@@ -8,7 +8,7 @@ import { getClientIp } from '@/lib/rate-limit';
 // POST - Start exam attempt
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<> }
+  { params }: { params: { examId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -59,7 +59,7 @@ export async function POST(
           ? shuffleArray(exam.questions)
           : exam.questions;
 
-        const questionsWithShuffledOptions = questions.map((q) => {
+        const questionsWithShuffledOptions = questions.map((q: { options: string; id: any; questionText: any; questionType: any; marks: any; order: any; }) => {
           const options = JSON.parse(q.options);
           return {
             id: q.id,
@@ -119,7 +119,7 @@ export async function POST(
       ? shuffleArray(exam.questions)
       : exam.questions;
 
-    const questionsWithShuffledOptions = questions.map((q) => {
+    const questionsWithShuffledOptions = questions.map((q: { options: string; id: any; questionText: any; questionType: any; marks: any; order: any; }) => {
       const options = JSON.parse(q.options);
       return {
         id: q.id,

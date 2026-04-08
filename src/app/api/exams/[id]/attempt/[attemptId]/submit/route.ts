@@ -4,10 +4,10 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<> }
+  { params }: { params: { id: string; attemptId: string } }
 ) {
   try {
-    const  = await params;
+    const { id: examId, attemptId } = params;
     const body = await request.json();
     const { answers, timeSpent } = body;
     
@@ -41,7 +41,7 @@ export async function POST(
     
     // 1. Save all answers
     const answerPromises = Object.entries(answers).map(async ([questionId, answerData]: [string, any]) => {
-      const question = exam.questions.find(q => q.id === questionId);
+      const question = exam.questions.find((q: { id: string; }) => q.id === questionId);
       if (!question) return null;
       
       // Calculate marks for multiple choice
@@ -93,7 +93,7 @@ export async function POST(
       select: { marksAwarded: true }
     });
     
-    const totalScore = updatedAnswers.reduce((sum, answer) => sum + answer.marksAwarded, 0);
+    const totalScore = updatedAnswers.reduce((sum: any, answer: { marksAwarded: any; }) => sum + answer.marksAwarded, 0);
     const percentage = (totalScore / exam.totalMarks) * 100;
     const grade = percentage >= exam.passingMarks ? 'PASS' : 'FAIL';
     
@@ -115,8 +115,8 @@ export async function POST(
       where: { examId, status: 'SUBMITTED', score: { not: null } }
     });
     
-    const avgScore = allAttempts.reduce((sum, a) => sum + (a.score || 0), 0) / allAttempts.length;
-    const passRate = (allAttempts.filter(a => a.grade === 'PASS').length / allAttempts.length) * 100;
+    const avgScore = allAttempts.reduce((sum: any, a: { score: any; }) => sum + (a.score || 0), 0) / allAttempts.length;
+    const passRate = (allAttempts.filter((a: { grade: string; }) => a.grade === 'PASS').length / allAttempts.length) * 100;
     
     await prisma.exam.update({
       where: { id: examId },
